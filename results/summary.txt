@@ -1,0 +1,12 @@
+Exoplanet Detection — Results Summary
+Generated: 2026-08-20 12:20
+
+Best model (tuned, by F1-score): Random Forest
+  Precision: 0.914
+  Recall:    0.876
+  F1-score:  0.895
+  ROC-AUC:   0.967
+  Accuracy:  0.9
+
+See model_comparison.csv, cross_validation_scores.csv, tuning_summary.csv,
+leakage_columns_removed.csv and feature_preparation_summary.csv for full detail.

@@ -1,0 +1,15 @@
+column,reason_removed
+koi_disposition,this is the label we filtered on to build the target
+koi_pdisposition,disposition produced by the automated vetting pipeline
+koi_score,a confidence score tied to the vetting/disposition process
+koi_fpflag_nt,false-positive flag set during vetting
+koi_fpflag_ss,false-positive flag set during vetting
+koi_fpflag_co,false-positive flag set during vetting
+koi_fpflag_ec,false-positive flag set during vetting
+kepoi_name,"identifier, not a physical measurement"
+kepler_name,"only assigned once a KOI is confirmed, so its presence gives the answer away"
+koi_vet_stat,vetting status produced during the KOI vetting process
+koi_vet_date,date associated with the vetting process
+koi_disp_prov,disposition provenance/processing metadata
+koi_comment,vetting-related comments or notes
+koi_tce_delivname,processing/delivery metadata from the TCE pipeline

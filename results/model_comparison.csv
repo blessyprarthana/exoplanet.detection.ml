@@ -1,0 +1,7 @@
+Model,Version,Precision,Recall,F1-score,ROC-AUC,Accuracy
+Logistic Regression,Baseline,0.826,0.877,0.851,0.938,0.851
+Logistic Regression,Tuned,0.829,0.884,0.855,0.938,0.855
+Random Forest,Baseline,0.912,0.882,0.897,0.967,0.902
+Random Forest,Tuned,0.914,0.876,0.895,0.967,0.9
+MLP,Baseline,0.857,0.837,0.847,0.937,0.853
+MLP,Tuned,0.885,0.827,0.855,0.94,0.864
