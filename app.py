@@ -20,11 +20,65 @@ st.set_page_config(page_title="Exoplanet Detection", layout="wide")
 
 MODELS_DIR = "models"
 RESULTS_DIR = "results"
-CHART_FIGSIZE = (4.2, 2.6)   # small, fixed — matches the reference dashboard's compact charts
+CHART_FIGSIZE = (3.4, 1.9)   # small, fixed — the dashboard has to fit one screen without scrolling
 
+# The whole dashboard has to sit in one viewport, so Streamlit's default
+# vertical rhythm is tightened: less page padding, tighter cards, smaller gaps
+# between stacked elements.
 st.markdown("""
 <style>
-div[data-testid="stMetric"] { background-color: #F7FAFF; border-radius: 10px; padding: 8px; }
+.block-container { padding-top: 1.2rem; padding-bottom: 0.5rem; }
+div[data-testid="stMetric"] { background-color: #F7FAFF; border-radius: 8px; padding: 4px 8px; }
+div[data-testid="stMetricValue"] { font-size: 1.25rem; }
+div[data-testid="stMetricLabel"] p { font-size: 0.72rem; }
+div[data-testid="stVerticalBlockBorderWrapper"] { padding: 0.35rem 0.6rem; }
+div[data-testid="stVerticalBlock"] { gap: 0.5rem; }
+div[data-testid="stFileUploaderDropzone"] { padding: 0.6rem 1rem; min-height: 0; }
+div[data-testid="stFileUploaderDropzone"] small { display: none; }
+h1 { font-size: 1.9rem; margin-bottom: 0; }
+
+/* Charts and the ROC image are width-driven, so on a wide monitor they would
+   grow tall enough to push the page past one screen. Cap their height and let
+   the width follow, so the layout is stable at any window size. */
+div[data-testid="stImage"] { display: flex; justify-content: center; }
+div[data-testid="stImage"] img { max-height: 195px; width: auto !important; }
+
+/* ---- Sidebar nav rail, styled after the CA1 interface mockup ---------- */
+section[data-testid="stSidebar"] { background-color: #F7FAFF; border-right: 1px solid #E6EDF8; }
+section[data-testid="stSidebar"] .block-container { padding-top: 1.6rem; }
+.sidebar-brand { font-size: 1.05rem; font-weight: 700; color: #1E3A8A; margin-bottom: 0.1rem; }
+.sidebar-sub { font-size: 0.78rem; color: #64748B; margin-bottom: 1.1rem; }
+.sidebar-note { font-size: 0.72rem; color: #94A3B8; line-height: 1.35;
+                margin-top: 1.1rem; padding-top: 0.9rem; border-top: 1px solid #E6EDF8; }
+
+/* the radio becomes a stack of full-width nav pills */
+section[data-testid="stSidebar"] div[role="radiogroup"] { gap: 0.15rem; width: 100%; }
+section[data-testid="stSidebar"] div[data-testid="stRadio"] { width: 100%; }
+/* the element wrapper shrink-wraps by default, which would leave the pills
+   only as wide as their text */
+section[data-testid="stSidebar"] div[data-testid="stElementContainer"] { width: 100%; align-self: stretch; }
+section[data-testid="stSidebar"] div[role="radiogroup"] > label {
+    display: flex; align-items: center; width: 100%;
+    padding: 0.42rem 0.7rem; border-radius: 8px; cursor: pointer;
+    transition: background-color 0.12s ease;
+}
+/* Structure is  label > div > div > [circle, textwrapper] — hide the circle
+   and let the row fill the rail width. */
+section[data-testid="stSidebar"] div[role="radiogroup"] > label > div { width: 100%; }
+section[data-testid="stSidebar"] div[role="radiogroup"] > label > div > div { width: 100%; align-items: center; }
+section[data-testid="stSidebar"] div[role="radiogroup"] > label > div > div > div:first-child { display: none; }
+section[data-testid="stSidebar"] div[role="radiogroup"] > label p {
+    font-size: 0.88rem; font-weight: 500; color: #334155; margin: 0;
+}
+section[data-testid="stSidebar"] div[role="radiogroup"] > label:hover { background-color: #E8F0FE; }
+section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-selected="true"],
+section[data-testid="stSidebar"] div[role="radiogroup"] > label:has(input:checked) {
+    background-color: #2563EB;
+}
+section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-selected="true"] p,
+section[data-testid="stSidebar"] div[role="radiogroup"] > label:has(input:checked) p {
+    color: #FFFFFF; font-weight: 600;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -79,11 +133,20 @@ default_feature_cols = feature_names_for(next(iter(pipelines.values())))
 # Sidebar
 # ---------------------------------------------------------------------------
 with st.sidebar:
-    st.markdown("### 🪐 Exoplanet Detection")
-    st.caption("MSc COMP702 project")
-    st.radio("Navigation", ["🏠 Home", "🗄️ Data", "⚙️ Models", "📊 Results", "🔧 Settings"], index=0, label_visibility="collapsed")
-    st.markdown("---")
-    st.caption("Single-page demo — everything lives in the tabs on the right.")
+    st.markdown('<div class="sidebar-brand">🪐 Exoplanet Detection</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-sub">MSc COMP702 project</div>', unsafe_allow_html=True)
+    # Kept as a radio so the highlight follows what the user clicks; the circles
+    # are hidden in CSS so it reads as the nav rail from the design mockup.
+    st.radio(
+        "Navigation",
+        ["Home", "Data", "Models", "Results", "Settings"],
+        index=0,
+        label_visibility="collapsed",
+        captions=None,
+        key="nav",
+    )
+    st.markdown('<div class="sidebar-note">Single-page demo — everything lives in the tabs on the right.</div>',
+                unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # Header
@@ -106,7 +169,7 @@ tab_predict, tab_compare = st.tabs(["Predict", "Model Comparison"])
 # PREDICT TAB — 3-column dashboard, matching the reference layout
 # ---------------------------------------------------------------------------
 with tab_predict:
-    left_col, center_col, right_col = st.columns([1, 1, 1.1], gap="medium")
+    left_col, center_col, right_col = st.columns([1, 1, 1.15], gap="small")
 
     # ---- Left column: upload, preview, model selection --------------------
     with left_col:
@@ -137,7 +200,7 @@ with tab_predict:
             # actually have a value rather than a row of empty "None" cells
             if uploaded_file is None:
                 preview_df = preview_df.dropna(axis=1, how="all")
-            st.dataframe(preview_df, height=180)
+            st.dataframe(preview_df, height=130)
             n_rows = min(5, len(input_df))
             st.caption(f"Showing first {n_rows} row{'s' if n_rows != 1 else ''} of {len(input_df)} total")
 
@@ -165,7 +228,7 @@ with tab_predict:
             )
             run_prediction = st.button("Predict", width="stretch", type="primary")
 
-    # ---- Center column: prediction result and headline metrics -----------
+    # ---- Centre column: prediction, headline metrics, feature importance --
     with center_col:
         with st.container(border=True):
             st.markdown("**4. Prediction Result**")
@@ -257,13 +320,46 @@ with tab_predict:
                     m3.metric("F1", f"{r['F1-score']:.2f}")
                     m4.metric("ROC-AUC", f"{r['ROC-AUC']:.2f}")
 
-    # ---- Right column: model comparison table ----------------------------
+            with st.container(border=True):
+                st.markdown("**Top Important Features**")
+                chosen_pipeline = pipelines.get(model_name)
+                if chosen_pipeline is not None:
+                    chosen_feature_cols = feature_names_for(chosen_pipeline)
+
+                    if model_name == "Random Forest":
+                        importances = pd.Series(
+                            chosen_pipeline.named_steps["model"].feature_importances_,
+                            index=chosen_feature_cols,
+                        ).sort_values(ascending=False).head(5)
+                        fig, ax = plt.subplots(figsize=CHART_FIGSIZE)
+                        importances.iloc[::-1].plot(kind="barh", ax=ax, color="#2563EB")
+                        ax.set_xlabel("Feature Importance", fontsize=8)
+                        ax.tick_params(labelsize=7)
+                        fig.tight_layout()
+                        st.pyplot(fig, width="stretch")
+
+                    elif model_name == "Logistic Regression":
+                        coef = pd.Series(
+                            chosen_pipeline.named_steps["model"].coef_[0],
+                            index=chosen_feature_cols,
+                        ).sort_values(key=abs, ascending=False).head(5)
+                        fig, ax = plt.subplots(figsize=CHART_FIGSIZE)
+                        colors = ["#2563EB" if v > 0 else "#DC2626" for v in coef.iloc[::-1]]
+                        coef.iloc[::-1].plot(kind="barh", ax=ax, color=colors)
+                        ax.set_xlabel("Coefficient", fontsize=8)
+                        ax.tick_params(labelsize=7)
+                        fig.tight_layout()
+                        st.pyplot(fig, width="stretch")
+                    else:
+                        st.caption("Available for Random Forest and Logistic Regression.")
+
+    # ---- Right column: comparison table, then ROC and F1 side by side -----
     with right_col:
         if results_table is not None:
             with st.container(border=True):
                 st.markdown("**5. Model Comparison Results**")
                 display_table = results_table[["Model", "Precision", "Recall", "F1-score", "ROC-AUC"]]
-                st.dataframe(display_table, hide_index=True, height=140)
+                st.dataframe(display_table, hide_index=True, height=145)
 
                 best_row = results_table.sort_values("F1-score", ascending=False).iloc[0]
                 st.success(
@@ -272,69 +368,34 @@ with tab_predict:
                     f"Highest F1-score ({best_row['F1-score']:.2f})"
                 )
 
-    # ---- Chart row: full width so the three columns above end level ------
-    st.write("")
-    chart_left, chart_center, chart_right = st.columns(3, gap="medium")
+        roc_col, f1_col = st.columns(2, gap="small")
 
-    with chart_left:
-        with st.container(border=True):
-            st.markdown("**Top Important Features**")
-            chosen_pipeline = pipelines.get(model_name)
-            if chosen_pipeline is not None:
-                chosen_feature_cols = feature_names_for(chosen_pipeline)
+        with roc_col:
+                roc_path = os.path.join(RESULTS_DIR, "outputs_roc_curves.png")
+                if os.path.exists(roc_path):
+                    with st.container(border=True):
+                        st.markdown("**ROC Curves**")
+                        st.image(roc_path, width="stretch")
 
-                if model_name == "Random Forest":
-                    importances = pd.Series(
-                        chosen_pipeline.named_steps["model"].feature_importances_,
-                        index=chosen_feature_cols,
-                    ).sort_values(ascending=False).head(5)
-                    fig, ax = plt.subplots(figsize=CHART_FIGSIZE)
-                    importances.iloc[::-1].plot(kind="barh", ax=ax, color="#2563EB")
-                    ax.set_xlabel("Feature Importance", fontsize=8)
-                    ax.tick_params(labelsize=7)
-                    fig.tight_layout()
-                    st.pyplot(fig, width="stretch")
+        with f1_col:
+                if results_table is not None:
+                    with st.container(border=True):
+                        st.markdown("**F1-score Comparison**")
+                        fig, ax = plt.subplots(figsize=CHART_FIGSIZE)
+                        colors = ["#F59E0B", "#16A34A", "#2563EB"][:len(results_table)]
+                        ax.bar(results_table["Model"], results_table["F1-score"], color=colors)
+                        ax.set_ylim(0, 1)
+                        ax.set_ylabel("F1-score", fontsize=8)
+                        ax.tick_params(labelsize=7)
+                        plt.xticks(rotation=15)
+                        fig.tight_layout()
+                        st.pyplot(fig, width="stretch")
 
-                elif model_name == "Logistic Regression":
-                    coef = pd.Series(
-                        chosen_pipeline.named_steps["model"].coef_[0],
-                        index=chosen_feature_cols,
-                    ).sort_values(key=abs, ascending=False).head(5)
-                    fig, ax = plt.subplots(figsize=CHART_FIGSIZE)
-                    colors = ["#2563EB" if v > 0 else "#DC2626" for v in coef.iloc[::-1]]
-                    coef.iloc[::-1].plot(kind="barh", ax=ax, color=colors)
-                    ax.set_xlabel("Coefficient", fontsize=8)
-                    ax.tick_params(labelsize=7)
-                    fig.tight_layout()
-                    st.pyplot(fig, width="stretch")
-                else:
-                    st.caption("Available for Random Forest and Logistic Regression.")
+        st.caption(
+            "Results are based on the held-out test set. Metrics may vary with "
+            "different datasets and preprocessing choices."
+        )
 
-    with chart_center:
-        roc_path = os.path.join(RESULTS_DIR, "outputs_roc_curves.png")
-        if os.path.exists(roc_path):
-            with st.container(border=True):
-                st.markdown("**ROC Curves**")
-                st.image(roc_path, width="stretch")
-
-    with chart_right:
-        if results_table is not None:
-            with st.container(border=True):
-                st.markdown("**F1-score Comparison**")
-                fig, ax = plt.subplots(figsize=CHART_FIGSIZE)
-                colors = ["#F59E0B", "#16A34A", "#2563EB"][:len(results_table)]
-                ax.bar(results_table["Model"], results_table["F1-score"], color=colors)
-                ax.set_ylim(0, 1)
-                ax.set_ylabel("F1-score", fontsize=8)
-                ax.tick_params(labelsize=7)
-                plt.xticks(rotation=15)
-                fig.tight_layout()
-                st.pyplot(fig, width="stretch")
-
-    st.caption(
-        "Results are based on the held-out test set. Metrics may vary with "
-        "different datasets and preprocessing choices."
-    )
 
 # ---------------------------------------------------------------------------
 # MODEL COMPARISON TAB
