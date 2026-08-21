@@ -60,16 +60,20 @@ Run the demo (it hot-reloads on save):
 
     streamlit run app.py
 
-Re-run the analysis: open `exoplanet_detection.ipynb` in Jupyter and run all
-cells. **Restart the kernel first** — an open Jupyter session does not pick up
-edits made to the `.ipynb` on disk, and saving from a stale session will
-overwrite them.
+Re-run the analysis: open `exoplanet_detection.ipynb` and run all cells.
+**Restart the kernel first** — reloading the file does not reset the kernel, so
+stale variables from a previous run survive and can mask errors.
 
 ### Working on the notebook alongside an agent
-Jupyter and an agent both write `exoplanet_detection.ipynb` directly, and
-neither notices the other. Before asking an agent to edit the notebook: save
-and **close** it in Jupyter. Afterwards, reopen it. Don't leave it open in a
-browser tab while edits are happening.
+Prefer **VS Code** over JupyterLab while an agent is editing. VS Code reloads an
+`.ipynb` that changed on disk automatically (when the tab has no unsaved
+edits), so agent edits just appear.
+
+JupyterLab holds the notebook in memory and does not follow on-disk changes. It
+detects the conflict and prompts with a *File Changed on Disk* dialog offering
+Revert or Overwrite — pick **Revert** to take the agent's version. Choosing
+Overwrite discards it. To avoid the dialog entirely, close the notebook in
+JupyterLab before an agent edits it.
 
 ## Checkpoints and reverting
 
