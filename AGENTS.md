@@ -43,9 +43,11 @@ model as an input feature. The train/test split is grouped by host star
 for this reason. Preserve these guarantees.
 
 ### Keep the environment pinned
-`requirements.txt` is pinned. The `.joblib` files are version-sensitive — a
-different scikit-learn major version may fail to load them or fall back to an
-approximate confidence. Don't loosen the pins casually.
+`scikit-learn` is pinned to **1.9.0** exactly, because that is what trained the
+committed `models/*.joblib` pipelines. Loading them under a different minor
+version raises `InconsistentVersionWarning` and can change predictions, so
+don't loosen that pin. Python 3.11+ is required (1.9.0 is not available for
+3.10). The other dependencies only carry version floors.
 
 ### Don't commit data
 `data/` stays gitignored. Don't add the raw KOI CSV, credentials, or `.env`.
