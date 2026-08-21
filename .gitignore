@@ -17,10 +17,3 @@ venv/
 # notebook writes them straight into results/.
 /outputs_*.png
 
-# Local agent tooling and notes, kept out of the shared repository.
-.claude/
-.codex/
-AGENTS.md
-
-# Local backup of notebook cell outputs
-exoplanet_detection.OUTPUTS-BACKUP.ipynb
