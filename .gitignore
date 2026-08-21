@@ -12,3 +12,14 @@ __pycache__/
 .venv/
 venv/
 .env
+
+# Figures written to the repo root by older notebook revisions; the current
+# notebook writes them straight into results/.
+/outputs_*.png
+
+# Local agent tooling and notes, kept out of the shared repository.
+.claude/
+AGENTS.md
+
+# Local backup of notebook cell outputs
+exoplanet_detection.OUTPUTS-BACKUP.ipynb
