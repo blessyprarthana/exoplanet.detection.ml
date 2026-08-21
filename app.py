@@ -165,7 +165,7 @@ with tab_predict:
             )
             run_prediction = st.button("Predict", width="stretch", type="primary")
 
-    # ---- Center column: prediction result, metrics, feature importance ----
+    # ---- Center column: prediction result and headline metrics -----------
     with center_col:
         with st.container(border=True):
             st.markdown("**4. Prediction Result**")
@@ -257,6 +257,26 @@ with tab_predict:
                     m3.metric("F1", f"{r['F1-score']:.2f}")
                     m4.metric("ROC-AUC", f"{r['ROC-AUC']:.2f}")
 
+    # ---- Right column: model comparison table ----------------------------
+    with right_col:
+        if results_table is not None:
+            with st.container(border=True):
+                st.markdown("**5. Model Comparison Results**")
+                display_table = results_table[["Model", "Precision", "Recall", "F1-score", "ROC-AUC"]]
+                st.dataframe(display_table, hide_index=True, height=140)
+
+                best_row = results_table.sort_values("F1-score", ascending=False).iloc[0]
+                st.success(
+                    f"🏆 **Best Performing Model**  \n"
+                    f"**{best_row['Model']}**  \n"
+                    f"Highest F1-score ({best_row['F1-score']:.2f})"
+                )
+
+    # ---- Chart row: full width so the three columns above end level ------
+    st.write("")
+    chart_left, chart_center, chart_right = st.columns(3, gap="medium")
+
+    with chart_left:
         with st.container(border=True):
             st.markdown("**Top Important Features**")
             chosen_pipeline = pipelines.get(model_name)
@@ -273,7 +293,7 @@ with tab_predict:
                     ax.set_xlabel("Feature Importance", fontsize=8)
                     ax.tick_params(labelsize=7)
                     fig.tight_layout()
-                    st.pyplot(fig, width="content")
+                    st.pyplot(fig, width="stretch")
 
                 elif model_name == "Logistic Regression":
                     coef = pd.Series(
@@ -286,31 +306,18 @@ with tab_predict:
                     ax.set_xlabel("Coefficient", fontsize=8)
                     ax.tick_params(labelsize=7)
                     fig.tight_layout()
-                    st.pyplot(fig, width="content")
+                    st.pyplot(fig, width="stretch")
                 else:
                     st.caption("Available for Random Forest and Logistic Regression.")
 
-    # ---- Right column: model comparison, ROC, F1 --------------------------
-    with right_col:
-        if results_table is not None:
-            with st.container(border=True):
-                st.markdown("**5. Model Comparison Results**")
-                display_table = results_table[["Model", "Precision", "Recall", "F1-score", "ROC-AUC"]]
-                st.dataframe(display_table, hide_index=True, height=140)
-
-                best_row = results_table.sort_values("F1-score", ascending=False).iloc[0]
-                st.success(
-                    f"🏆 **Best Performing Model**  \n"
-                    f"**{best_row['Model']}**  \n"
-                    f"Highest F1-score ({best_row['F1-score']:.2f})"
-                )
-
+    with chart_center:
         roc_path = os.path.join(RESULTS_DIR, "outputs_roc_curves.png")
         if os.path.exists(roc_path):
             with st.container(border=True):
                 st.markdown("**ROC Curves**")
-                st.image(roc_path, width=380)
+                st.image(roc_path, width="stretch")
 
+    with chart_right:
         if results_table is not None:
             with st.container(border=True):
                 st.markdown("**F1-score Comparison**")
@@ -322,12 +329,12 @@ with tab_predict:
                 ax.tick_params(labelsize=7)
                 plt.xticks(rotation=15)
                 fig.tight_layout()
-                st.pyplot(fig, width="content")
+                st.pyplot(fig, width="stretch")
 
-        st.caption(
-            "Results are based on the held-out test set. Metrics may vary with "
-            "different datasets and preprocessing choices."
-        )
+    st.caption(
+        "Results are based on the held-out test set. Metrics may vary with "
+        "different datasets and preprocessing choices."
+    )
 
 # ---------------------------------------------------------------------------
 # MODEL COMPARISON TAB
