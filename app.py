@@ -1,10 +1,10 @@
 """
-Exoplanet Detection — ML Model Comparison
-Streamlit demo UI for COMP702 CA2.
+Exoplanet Detection - ML Model Comparison
+Streamlit demo UI for the COMP702 MSc project.
 
-Loads the trained pipelines saved by exoplanet_detection.ipynb (in ./models/)
-and the results saved by the results-export cell (in ./results/). Nothing here
-is hardcoded — every number and plot comes from your actual notebook run.
+Reads the pipelines and results that exoplanet_detection.ipynb writes out into
+models/ and results/, so nothing in here is hardcoded. If the numbers on screen
+look wrong, rerun the notebook rather than editing this file.
 
 Run with:  streamlit run app.py
 """
@@ -20,11 +20,10 @@ st.set_page_config(page_title="Exoplanet Detection", layout="wide")
 
 MODELS_DIR = "models"
 RESULTS_DIR = "results"
-CHART_FIGSIZE = (3.4, 1.9)   # small, fixed — the dashboard has to fit one screen without scrolling
+CHART_FIGSIZE = (3.4, 1.9)   # small and fixed, so the dashboard fits one screen
 
-# The whole dashboard has to sit in one viewport, so Streamlit's default
-# vertical rhythm is tightened: less page padding, tighter cards, smaller gaps
-# between stacked elements.
+# I wanted the whole dashboard to sit in one viewport, so this tightens
+# Streamlit's default spacing: less padding, tighter cards, smaller gaps.
 st.markdown("""
 <style>
 .block-container { padding-top: 1.2rem; padding-bottom: 0.5rem; }
@@ -62,7 +61,7 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label {
     padding: 0.42rem 0.7rem; border-radius: 8px; cursor: pointer;
     transition: background-color 0.12s ease;
 }
-/* Structure is  label > div > div > [circle, textwrapper] — hide the circle
+/* Structure is  label > div > div > [circle, textwrapper], so hide the circle
    and let the row fill the rail width. */
 section[data-testid="stSidebar"] div[role="radiogroup"] > label > div { width: 100%; }
 section[data-testid="stSidebar"] div[role="radiogroup"] > label > div > div { width: 100%; align-items: center; }
@@ -83,9 +82,7 @@ section[data-testid="stSidebar"] div[role="radiogroup"] > label:has(input:checke
 """, unsafe_allow_html=True)
 
 
-# ---------------------------------------------------------------------------
-# Load saved artefacts
-# ---------------------------------------------------------------------------
+# ---- loading the saved models and results ----
 @st.cache_resource
 def load_pipelines():
     pipelines = {}
@@ -111,9 +108,9 @@ def load_results_table():
 
 
 def feature_names_for(pipeline):
-    """Ground truth for what a pipeline was trained on, read straight off the
-    fitted imputer — can't drift out of sync with a separately-saved column
-    list, which was the earlier cause of the 69-vs-70 feature error."""
+    """What the pipeline was actually trained on, read off the fitted imputer.
+    A separately-saved column list can drift out of sync, which is what caused
+    my 69-vs-70 feature error earlier on."""
     return list(pipeline.named_steps["impute"].feature_names_in_)
 
 
@@ -129,14 +126,14 @@ if not pipelines:
 
 default_feature_cols = feature_names_for(next(iter(pipelines.values())))
 
-# ---------------------------------------------------------------------------
-# Sidebar
-# ---------------------------------------------------------------------------
+# ---- sidebar ----
 with st.sidebar:
     st.markdown('<div class="sidebar-brand">🪐 Exoplanet Detection</div>', unsafe_allow_html=True)
     st.markdown('<div class="sidebar-sub">MSc COMP702 project</div>', unsafe_allow_html=True)
-    # Kept as a radio so the highlight follows what the user clicks; the circles
-    # are hidden in CSS so it reads as the nav rail from the design mockup.
+    # Still a radio underneath so the highlight follows the click, but the
+    # circles are hidden in CSS so it reads as the nav rail from my mockup.
+    # Note this is decorative at the moment: nothing reads st.session_state.nav,
+    # the tabs below do the actual switching. Left in because the mockup has it.
     st.radio(
         "Navigation",
         ["Home", "Data", "Models", "Results", "Settings"],
@@ -145,12 +142,10 @@ with st.sidebar:
         captions=None,
         key="nav",
     )
-    st.markdown('<div class="sidebar-note">Single-page demo — everything lives in the tabs on the right.</div>',
+    st.markdown('<div class="sidebar-note">Single-page demo, everything lives in the tabs on the right.</div>',
                 unsafe_allow_html=True)
 
-# ---------------------------------------------------------------------------
-# Header
-# ---------------------------------------------------------------------------
+# ---- page header ----
 header_left, header_right = st.columns([5, 1])
 with header_left:
     st.markdown("# Exoplanet Detection")
@@ -158,20 +153,18 @@ with header_left:
 with header_right:
     with st.popover("ℹ️ About"):
         st.write(
-            "COMP702 MSc Project — Automated Exoplanet Detection from Space Telescope "
+            "COMP702 MSc Project: Automated Exoplanet Detection from Space Telescope "
             "Data Using Machine Learning."
         )
 st.markdown("---")
 
 tab_predict, tab_compare = st.tabs(["Predict", "Model Comparison"])
 
-# ---------------------------------------------------------------------------
-# PREDICT TAB — 3-column dashboard, matching the reference layout
-# ---------------------------------------------------------------------------
+# ---- Predict tab: 3 columns, laid out like the mockup ----
 with tab_predict:
     left_col, center_col, right_col = st.columns([1, 1, 1.15], gap="small")
 
-    # ---- Left column: upload, preview, model selection --------------------
+    # left column: upload, preview, pick a model
     with left_col:
         with st.container(border=True):
             st.markdown("**1. Upload KOI Feature Dataset**")
@@ -184,7 +177,7 @@ with tab_predict:
             if uploaded_file is not None:
                 input_df = pd.read_csv(uploaded_file, comment="#")
             else:
-                st.caption("No file uploaded — using a sample row.")
+                st.caption("No file uploaded, so this is a sample row.")
                 sample = {c: np.nan for c in default_feature_cols}
                 for c, v in {
                     "koi_period": 10.487, "koi_depth": 512.3, "koi_duration": 2.45,
@@ -196,8 +189,7 @@ with tab_predict:
 
             preview_cols = [c for c in default_feature_cols if c in input_df.columns][:5]
             preview_df = input_df[preview_cols].head(5)
-            # when using the placeholder sample row, only show columns that
-            # actually have a value rather than a row of empty "None" cells
+            # otherwise the sample row shows as a line of empty None cells
             if uploaded_file is None:
                 preview_df = preview_df.dropna(axis=1, how="all")
             st.dataframe(preview_df, height=130)
@@ -228,7 +220,7 @@ with tab_predict:
             )
             run_prediction = st.button("Predict", width="stretch", type="primary")
 
-    # ---- Centre column: prediction, headline metrics, feature importance --
+    # centre column: the prediction itself, plus metrics and importances
     with center_col:
         with st.container(border=True):
             st.markdown("**4. Prediction Result**")
@@ -238,10 +230,9 @@ with tab_predict:
                 model_feature_cols = feature_names_for(pipeline)
 
                 row = input_df.iloc[[selected_idx]]
-                # target and kepid must never reach the model as input features —
-                # target is the label itself, kepid is only a grouping identifier.
-                # Dropping them explicitly here (rather than relying on them simply
-                # not being in model_feature_cols) makes that guarantee visible.
+                # target and kepid must never reach the model: target is the
+                # label itself and kepid is only a grouping key. I drop them
+                # explicitly rather than trusting model_feature_cols to omit them.
                 feature_row = row.drop(columns=[c for c in ["target", "kepid"] if c in row.columns])
 
                 aligned = pd.DataFrame(columns=model_feature_cols)
@@ -254,13 +245,11 @@ with tab_predict:
                 pred = pipeline.predict(aligned)[0]
 
                 # predict_proba can fail on a model pickled with a newer
-                # scikit-learn than the one currently installed (this
-                # notebook used 1.9.0; if your local sklearn is older,
-                # LogisticRegression.predict_proba() may reference an
-                # attribute that no longer exists). Fall back to
-                # decision_function + a sigmoid transform for the binary
-                # case so the app still works either way — but note when
-                # that fallback was used, since it's an approximation.
+                # scikit-learn than the one installed here (I trained
+                # on 1.9.0). Falling back to decision_function + a sigmoid
+                # keeps the app working, but it is an approximation, so I
+                # flag it in the UI rather than passing it off as a real
+                # probability.
                 confidence_is_approximate = False
                 try:
                     proba = pipeline.predict_proba(aligned)[0]
@@ -285,7 +274,7 @@ with tab_predict:
 
                 if confidence_is_approximate:
                     st.caption(
-                        "⚠️ Estimated from decision_function — predict_proba was "
+                        "⚠️ Estimated from decision_function, because predict_proba was "
                         "unavailable due to a scikit-learn version mismatch between "
                         "training and this environment. Run `pip install --upgrade "
                         "scikit-learn` to resolve."
@@ -353,7 +342,7 @@ with tab_predict:
                     else:
                         st.caption("Available for Random Forest and Logistic Regression.")
 
-    # ---- Right column: comparison table, then ROC and F1 side by side -----
+    # right column: comparison table, then ROC and F1 side by side
     with right_col:
         if results_table is not None:
             with st.container(border=True):
@@ -397,9 +386,7 @@ with tab_predict:
         )
 
 
-# ---------------------------------------------------------------------------
-# MODEL COMPARISON TAB
-# ---------------------------------------------------------------------------
+# ---- Model comparison tab ----
 with tab_compare:
     if results_table is not None:
         with st.container(border=True):
@@ -418,7 +405,7 @@ with tab_compare:
                 st.markdown("**Feature Correlation (training set)**")
                 st.image(corr_path, width=500)
     else:
-        st.warning("results/model_comparison.csv not found — copy your results/ folder here.")
+        st.warning("results/model_comparison.csv not found. Copy the results/ folder here.")
 
 st.markdown("---")
 foot_left, foot_right = st.columns(2)
